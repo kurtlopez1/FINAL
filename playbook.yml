@@ -1,0 +1,127 @@
+---
+
+- name: Ensure firewall is enabled
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: Allow SSH access through firewall
+  ansible.builtin.firewalld:
+    service: ssh
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: Allow HTTP and HTTPS access through firewall
+  ansible.builtin.firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+    immediate: yes
+  vars:
+    http_ports:
+      - 80/tcp
+      - 443/tcp
+
+- name: Deny all other incoming traffic
+  ansible.builtin.firewalld:
+    zone: public
+    state: enabled
+    immediate: yes
+    rich_rules:
+      - rule: 'family="ipv4" source address="0.0.0.0/0" drop'
+      - rule: 'family="ipv6" source address="::/0" drop'
+      
+ - name: Enable SELinux
+  ansible.builtin.selinux:
+    policy: targeted
+    state: enforcing
+
+- name: Install SSL/TLS certificates
+  ansible.builtin.copy:
+    src: /path/to/certificates/
+    dest: /etc/ssl/certs/
+    mode: 0644
+
+- name: Configure SSL/TLS settings
+  ansible.builtin.copy:
+    src: /path/to/ssl.conf
+    dest: /etc/httpd/conf.d/
+    mode: 0644
+
+- name: Restart Apache service
+  ansible.builtin.service:
+    name: httpd
+    state: restarted
+    
+- name: Install and configure NTP service
+  ansible.builtin.package:
+    name: ntp
+    state: present
+
+- name: Configure NTP servers
+  ansible.builtin.lineinfile:
+    path: /etc/ntp.conf
+    line: "server ntp.example.com"
+    insertafter: '^# Please consider joining the pool'
+    state: present
+
+- name: Start and enable NTP service
+  ansible.builtin.service:
+    name: ntpd
+    state: started
+    enabled: yes
+
+- name: Install and configure DNS server
+  ansible.builtin.package:
+    name: bind
+    state: present
+
+- name: Copy DNS configuration file
+  ansible.builtin.copy:
+    src: /path/to/named.conf
+    dest: /etc/named.conf
+    mode: 0644
+
+- name: Start and enable DNS service
+  ansible.builtin.service:
+    name: named
+    state: started
+    enabled: yes
+- name: Install antivirus software
+  ansible.builtin.package:
+    name: clamav
+    state: present
+
+- name: Configure antivirus scans
+  ansible.builtin.copy:
+    src: /path/to/clamscan.conf
+    dest: /etc/clamav/
+    mode: 0644
+
+- name: Schedule antivirus scans
+  ansible.builtin.copy:
+    src: /path/to/clamav-cron
+    dest: /etc/cron.d/
+    mode: 0644
+    
+- name: Set password complexity policy
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/common-password
+    regexp: '^password\s+requisite\s+pam_cracklib.so'
+    line: 'password requisite pam_cracklib.so retry=3 minlen=8 difok=3'
+    state: present
+
+- name: Set account lockout policy
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/system-auth
+    regexp: '^auth\s+required\s+pam_faillock.so'
+    line: 'auth required pam_faillock.so preauth silent deny=5 unlock_time=900'
+    state: present
+
+- name: Set password expiration policy
+  ansible.builtin.copy:
+    src: /path/to/login.defs
+    dest: /etc/login.defs
+    mode: 0644
